@@ -1,0 +1,51 @@
+//https://www.bit-byter.com/blog/files/cpp-thread-exception.html
+#include <iostream>
+#include <thread>
+#include <mutex>
+#include <vector>
+#include <exception>
+#include <stdexcept>
+using namespace std;
+static std::exception_ptr globalExceptionPtr = nullptr;
+
+void exceptionThrowingFunc()
+{
+  try
+  {
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    throw std::runtime_error("exceptionThrowingFunc Threw an Exception");
+  }
+  catch (...)
+  {
+    //Set the global exception pointer in case of an exception
+    globalExceptionPtr = std::current_exception();
+  }
+}
+
+int main()
+{
+ 
+ 
+    try {
+        std::thread t1(exceptionThrowingFunc);
+         t1.join();
+    } catch  (const std::exception &ex) {
+        //Does this catch thread exceptions ??
+        std::cout << "Thread had an Exception" << std::endl;
+    }
+    
+    
+    
+  if (globalExceptionPtr)
+  {
+    try
+    {
+      std::rethrow_exception(globalExceptionPtr);
+    }
+    catch (const std::exception &ex)
+    {
+      std::cout << "Caught via std::exception_ptr " << ex.what() << "\n";
+    }
+  }
+  return 0;
+}
